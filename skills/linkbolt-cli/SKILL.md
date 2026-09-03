@@ -1,12 +1,12 @@
 ---
 name: linkbolt-cli
-description: "Manage Linkbolt Capture / search / Resource via machine API CLI. Use when the user mentions Linkbolt, capture a URL, search inbox Resources, machine keys, lbk_live, or wants agent access to Linkbolt."
+description: "Manage Linkbolt Capture / search / retrieve / Resource via machine API CLI. Use when the user mentions Linkbolt, capture a URL, search inbox Resources, machine grounding retrieve, machine keys, lbk_live, or wants agent access to Linkbolt."
 category: productivity
 ---
 
 # linkbolt-cli
 
-Agent-ready CLI for the Linkbolt **machine API** (`https://convex-site.linkbolt.app`). Same Capture / search / Resource domain as the web app. Auth = Bearer `lbk_live_…` from **Compte → Clés machine**.
+Agent-ready CLI for the Linkbolt **machine API** (`https://convex-site.linkbolt.app`). Same Capture / search / retrieve / Resource domain as the web app. Auth = Bearer `lbk_live_…` from **Compte → Clés machine**.
 
 Canonical HTTP paths: `/v1/*`. Server still accepts `/hermes/v1/*` as aliases.
 
@@ -14,6 +14,7 @@ Canonical HTTP paths: `/v1/*`. Server still accepts `/hermes/v1/*` as aliases.
 
 - Capture a URL into a Resource
 - Search the Propriétaire's Inbox / Resources
+- Retrieve grounding passages (`POST /v1/retrieve`) — hits + `insufficient`, no `answer`
 - Fetch one Resource by id
 - Authenticate or rotate a machine key for Linkbolt
 - Give an agent (Alfred, Hermes, scripts) API access to Linkbolt
@@ -45,7 +46,7 @@ Token file: `~/.config/tokens/linkbolt-cli.txt` (chmod 600). Never commit it. Ne
 ## Working Rules
 
 1. Always `--json` for agent parsing.
-2. Prefer `search query` / `resource get` before mutating with `capture create`.
+2. Prefer `search query` / `retrieve` / `resource get` before mutating with `capture create`.
 3. Capture is idempotent on canonical URL for that Propriétaire.
 4. `401` = missing/invalid/revoked token. `429` = shared quota — honor `Retry-After`.
 5. Do not invent Resource ids. Do not call `/hermes/v1/*` from this CLI (canonical `/v1/*` only).
@@ -63,6 +64,12 @@ Token file: `~/.config/tokens/linkbolt-cli.txt` (chmod 600). Never commit it. Ne
 | Action | Command | Notes |
 |--------|---------|--------|
 | query | `linkbolt-cli search query --q <query> [--limit 20] --json` | `POST /v1/search` — hybrid hits are Resources + passage |
+
+### `retrieve`
+
+| Action | Command | Notes |
+|--------|---------|--------|
+| retrieve | `linkbolt-cli retrieve --q <query> [--limit 8] [--platform <name>] [--source-kind <kind>] [--since <iso>] --json` | `POST /v1/retrieve` — `{ hits, insufficient }`, no `answer`. `--source-kind` maps to JSON `sourceKind`. Default limit 8 (server ceiling 20). |
 
 ### `resource`
 
@@ -95,6 +102,7 @@ On error: `{ "ok": false, "error": { "message": "...", "status": 401 } }`
 linkbolt-cli --help
 linkbolt-cli capture create --help
 linkbolt-cli search query --help
+linkbolt-cli retrieve --help
 linkbolt-cli resource get --help
 linkbolt-cli auth --help
 ```
